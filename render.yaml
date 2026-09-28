@@ -1,0 +1,70 @@
+# Render Blueprint - deploy both services at once via "New +" -> "Blueprint" in the
+# Render dashboard, pointing at this repo. You will still need to fill in the
+# secret environment variables manually in the Render dashboard after the first
+# deploy (Render does not let a committed file set secret values) - see the
+# `sync: false` entries below and DELIVERY_CHECKLIST.md for what each one is.
+
+services:
+  - type: web
+    name: cloudviz-backend
+    runtime: node
+    rootDir: backend
+    plan: starter # Free tier sleeps after 15 min idle - use starter+ for an always-on backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DEMO_MODE
+        value: "true"
+      - key: MONITORING_CRON
+        value: "*/5 * * * *"
+      - key: CLIENT_URL
+        sync: false # set to your deployed frontend URL after it's created
+      - key: MONGODB_URI
+        sync: false # MongoDB Atlas connection string - see DELIVERY_CHECKLIST.md Section 1.1
+      - key: JWT_SECRET
+        sync: false # generate your own - see DELIVERY_CHECKLIST.md Section 1.2
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: ALERT_FROM_EMAIL
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: OCI_TENANCY
+        sync: false
+      - key: OCI_USER_ID
+        sync: false
+      - key: OCI_FINGERPRINT
+        sync: false
+      - key: OCI_PRIVATE_KEY_PATH
+        sync: false
+      - key: OCI_REGION
+        sync: false
+
+  - type: web
+    name: cloudviz-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false # set to https://cloudviz-backend.onrender.com/api (your actual backend URL) + /api
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
